@@ -2,11 +2,11 @@
 #include <time.h>
 
 #ifndef SIZE
-#define SIZE(L) ( DIV_ROUND_UP (2 * (L), 2 * sizeof (array_t)) )
+#define SIZE(L) ( DIV_ROUND_UP (2 * (L), sizeof (array_t)) )
 #endif
 
 
-enum {MAX_POS_MASKS = 100, N_EXPERIMENTS = 150};
+enum {MAX_POS_MASKS = 100};
 
 int str_size(int len) {
 	return len + len / 8;
@@ -24,7 +24,7 @@ int mypower(int a, int p) {
 int generate_mask_str(int len, char *s) {
 	int ans = 0;
 	for (int i = 0; i < len; ++i){
-		if (i % 8 == 0 && i != len - 1 && i != 0){
+		if (i % 8 == 0 && i != str_size(len) - 1 && i != 0){
 			s[i + i / 8 - 1] = ',';
 		}
 		int r = rand() % 3;
@@ -34,21 +34,14 @@ int generate_mask_str(int len, char *s) {
 			default: s[i + i / 8] = 'x'; ++ans;
 		}
 	}
-	s[len + len / 8 - 1] = '\0';
+	s[str_size(len) - 1] = '\0';
 	return ans;	
 }
 
-int generate_array_t(int len, array_t *a){
-	int str_len = str_size(len);
-	char s[str_len];
-	int xs = generate_mask_str(len, s);
-	a = array_from_str(s);
-	return xs;
-}
-
-void generate_diff_array(int n, struct hs *h, int i, char *s, int len){
-	struct hs_vec *v = &h->list.diff[i];
-	for (int i = 0; i < 20; ++i){
+void generate_diff_array(int n_neg, struct hs *h, int idx, char *s, int len){
+	struct hs_vec *v = &h->list.diff[idx];
+	array_t *a;
+	for (int t = 0; t < n_neg; ++t){
 		char ss[str_size(len)];
 		for (int j = 0; j < str_size(len); ++j){
 			if (s[j] == '1' || s[j] == '0' || s[j] == ',') {
@@ -63,38 +56,70 @@ void generate_diff_array(int n, struct hs *h, int i, char *s, int len){
 			}
 		}
 		ss[str_size(len) - 1] = '\0';
-		array_t *a = array_from_str(ss);
+		a = array_from_str(ss);
+		//printf("%s\n", ss);
 		my_append(v, a, true);
 	}
 }
 
-struct hs *generate_hs(int n_positive, int len) {
-	struct hs *h = hs_create(SIZE(len));
+void generate_hs(struct hs *h, int n_positive, int len) {
+	array_t *a;
 	for (int i = 0; i < n_positive; ++i){
-		array_t *a;
-		int str_len = str_size(len);
-		char s[str_len];
+		char s[str_size(len)];
 		int xs = generate_mask_str(len, s);
-		//printf("%s\n", s);
+		//printf("s %s\n", s);
 		a = array_from_str(s);
+	//	printf("a %d %s\n", i, array_to_str(a, SIZE(len), true));
 		hs_add(h, a);
-		int max_neg = mypower(3, xs);
+		int max_neg = 50;//mypower(3, xs);
 		int n_neg = rand() % max_neg;
+
 		generate_diff_array(n_neg, h, i, s, len);
+		//printf("\n");
 	}	
-	return h;
 }
 
 
 int main() {
 	srand(time(NULL));
-	int len = 128;
+	int len = 256;
 	int n_positive = rand() % MAX_POS_MASKS;
-	struct hs *h = generate_hs(n_positive, len);
+	//printf("%d\n", n_positive);
+	struct hs *h = hs_create(len / 8);
+	generate_hs(h, n_positive, len);
 	int x0 = hs_count(h) + hs_count_diff(h);
-	//blake_hs_vec(h);
+	//hs_compact(h);
+	//my_print_hs(h);
+	//printf("\n");
+	
+	//printf("AA \n");
+	int x01 = hs_count(h) + hs_count_diff(h);
+	printf("%d %d\n", hs_count(h), hs_count_diff(h));
+	
+	//struct hs *orig;
+	//orig = hs_create(len / 8);
+	//hs_copy (orig, h);
+
+	blake_hs_vec(h);
 	int x1 = hs_count(h) + hs_count_diff(h);
-	printf("%d %d\n", x0, x1);
+	//my_print_hs(h);
+	printf("%d %d\n", hs_count(h), hs_count_diff(h));
+	//printf("%d %d %d\n", x0, x01, x1);
+	//struct hs *tmp, *tmp2;
+	//tmp = hs_create(len / 8);
+	//tmp2 = hs_create(len / 8);
+	//hs_copy (tmp, h);
+	//hs_copy (tmp2, orig);
+	//
+    //
+	//hs_minus(tmp2, h);
+	//hs_minus(tmp, orig);
+    //
+	//if (hs_compact(tmp2) == 0 && hs_compact(tmp) == 0){
+	//	printf("YES\n");
+	//} else {
+    //    printf("NO\n");
+    //}
 	hs_free(h);
 	return 0;
 }

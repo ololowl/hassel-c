@@ -8,7 +8,9 @@
 
 #include "hs.h"
 
-#define MAX_STR 65536
+//#define MAX_STR 65536
+#define MAX_STR 4000000
+
 #define VEC_START_SIZE 1
 
 /* Add A to V. If DIFF, V is a diff list, else V is directly from an hs. */
@@ -314,8 +316,10 @@ hs_cmpl (struct hs *hs)
     tmp.diff = xcalloc (tmp.alloc, sizeof *tmp.diff);
     if (v->diff) { /* NULL if called from comp_diff */
       struct hs_vec *d = &v->diff[i];
-      for (int j = 0; j < d->used; j++)
+      for (int j = 0; j < d->used; j++){
         vec_append (&tmp, d->elems[j], false);
+        d->elems[j] = NULL;
+      }
     }
 
     if (!new_list.used) new_list = tmp;

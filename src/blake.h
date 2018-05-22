@@ -17,7 +17,7 @@ void my_print_hs(struct hs *h);
 
 void make_new_elem (struct hs *h, int i, int j, int part, array_t mask1);
 
-void merge(struct hs *h, int i, int j, struct new_elems *info);
+int merge(struct hs *h, int i, int j, struct new_elems *info);
 bool check_diffs(struct hs *h, int big_idx, int small_idx);
 int merge_check_diffs(struct hs *h, int i, int j, struct new_elems *info);
 
