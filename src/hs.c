@@ -19,7 +19,9 @@ vec_append (struct hs_vec *v, array_t *a, bool diff)
 {
   if (v->used == v->alloc) {
     v->alloc = v->alloc ? 2 * v->alloc : VEC_START_SIZE;
-    v->elems = xrealloc (v->elems, v->alloc * sizeof *v->elems);
+    //printf("size %lu\n",  v->alloc * sizeof *v->elems);
+    v->elems = realloc (v->elems, v->alloc * sizeof *v->elems);
+    //printf("addr %x\n", v->elems);
     if (!diff) v->diff = xrealloc (v->diff, v->alloc * sizeof *v->diff);
   }
   if (!diff) memset (&v->diff[v->used], 0, sizeof *v->diff);
@@ -161,6 +163,9 @@ void my_compact (struct hs_vec *v, const array_t* mask, int len){
 }
 void my_free (struct hs_vec *v, int i){
   vec_elem_free(v, i);
+}
+void my_destroy (struct hs_vec *v){
+  vec_destroy(v);
 }
 
 

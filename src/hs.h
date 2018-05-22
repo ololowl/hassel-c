@@ -26,7 +26,7 @@ void my_append(struct hs_vec *v, array_t *a, bool diff);
 void my_diff (struct hs_vec *dst, const array_t *isect, const struct hs_vec *src, int len);
 void my_compact (struct hs_vec *v, const array_t* mask, int len);
 void my_free (struct hs_vec *v, int i);
-
+void my_destroy (struct hs_vec *v);
 
 struct hs *hs_create  (int len);
 void       hs_destroy (struct hs *hs);

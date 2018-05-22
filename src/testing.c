@@ -6,7 +6,7 @@
 #endif
 
 
-enum {MAX_POS_MASKS = 10, MAX_NEG = 3};
+enum {MAX_POS_MASKS = 100, MAX_NEG = 30};
 
 int str_size(int len) {
 	return len + len / 8;
@@ -73,21 +73,20 @@ void generate_hs(struct hs *h, int n_positive, int len) {
 		hs_add(h, a);
 		int n_neg = rand() % MAX_NEG;
 
-		//generate_diff_array(n_neg, h, i, s, len);
+		generate_diff_array(n_neg, h, i, s, len);
 		//printf("\n");
 	}	
 }
 
-
 int main() {
 	srand(time(NULL));
-	int len = 8;
+	int len =256;
 	int n_positive = rand() % MAX_POS_MASKS;
 	//printf("%d\n", n_positive);
 	struct hs *h = hs_create(len / 8);
 	generate_hs(h, n_positive, len);
 	int x0 = hs_count(h) + hs_count_diff(h);
-	hs_compact(h);
+	//hs_compact(h);
 	//my_print_hs(h);
 	//printf("\n");
 	
@@ -102,7 +101,7 @@ int main() {
 	blake_hs_vec(h);
 	int x1 = hs_count(h) + hs_count_diff(h);
 	//my_print_hs(h);
-	printf("%d %d\n", hs_count(h), hs_count_diff(h));
+	printf("res pos-%d neg-%d\n", hs_count(h), hs_count_diff(h));
 	//printf("%d %d %d\n", x0, x01, x1);
 	//struct hs *tmp, *tmp2;
 	//tmp = hs_create(len / 8);
@@ -119,7 +118,7 @@ int main() {
 	//} else {
     //    printf("NO\n");
     //}
-	hs_free(h);
+	//hs_free(h);
 	return 0;
 }
 
