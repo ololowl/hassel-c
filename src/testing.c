@@ -82,7 +82,7 @@ void generate_hs(struct hs *h, int n_positive, int len) {
 int main() {
 	srand(time(NULL));
 	int len = 8;
-	int n_positive = rand() % MAX_POS_MASKS;
+	int n_positive = 2;//rand() % MAX_POS_MASKS;
 	//printf("%d\n", n_positive);
 	struct hs *h = hs_create(len / 8);
 	generate_hs(h, n_positive, len);
@@ -93,7 +93,7 @@ int main() {
 	
 	//printf("AA \n");
 	int x01 = hs_count(h) + hs_count_diff(h);
-	printf("%d %d\n", hs_count(h), hs_count_diff(h));
+	printf("pos-%d neg-%d\n", hs_count(h), hs_count_diff(h));
 	
 	//struct hs *orig;
 	//orig = hs_create(len / 8);

@@ -6,6 +6,7 @@
 // >0 if original elem or merging had place
 struct new_elems {
 	int *list;
+	bool *is_orig;
 	int alloc, used;
 };
 
@@ -15,7 +16,7 @@ void info_elem_free(struct new_elems *info, int i);
 
 void my_print_hs(struct hs *h);
 
-void make_new_elem (struct hs *h, int i, int j, int part, array_t mask1);
+bool make_new_elem (struct hs *h, int i, int j, int part, array_t mask1);
 
 int merge(struct hs *h, int i, int j, struct new_elems *info);
 bool check_diffs(struct hs *h, int big_idx, int small_idx);

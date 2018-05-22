@@ -14,20 +14,25 @@ void add_info(struct new_elems *info) {
 	if (info->used == info->alloc) {
 		info->alloc *= 2;
 		info->list = realloc(info->list, info->alloc);
+		info->is_orig = realloc(info->is_orig, info->alloc);
 	}
 	info->list[info->used] = 0;
+	info->is_orig[info->used] = false;
 	info->used++;
 }
 
 void info_free(struct new_elems *info) {
 	free(info->list);
+	free(info->is_orig);
 	free(info);
 }
 
 void info_elem_free(struct new_elems *info, int i) {
 	info->list[i] = info->list[info->used - 1];
+	info->is_orig[i] = info->is_orig[info->used - 1];
 	info->used--;
 	info->list[i]++;
+	info->is_orig[i] = true;
 }
 
 void my_print_hs(struct hs *h) {
@@ -95,7 +100,7 @@ int merge_check_diffs(struct hs *h, int i, int j, struct new_elems *info){
 	return idx;
 }
 
-void make_new_elem (struct hs *h, int i, int j, int part, array_t mask1){
+bool make_new_elem (struct hs *h, int i, int j, int part, array_t mask1){
 	struct hs_vec *v = &h->list;
 	int len = h->len;
 	array_t *tmp = array_create(len, BIT_X);
@@ -114,15 +119,15 @@ void make_new_elem (struct hs *h, int i, int j, int part, array_t mask1){
 	}
 	if (correct) {	
 	//	printf("lalala\n");
-		my_append(v, tmp, false);
-	//	my_print_hs(h);
+		hs_add(h, tmp);	//	my_print_hs(h);
 
 		// add diffs
 		struct hs_vec *d = &v->diff[v->used - 1];
    		my_diff(d, v->elems[v->used - 1], &v->diff[i], len);
       	my_diff(d, v->elems[v->used - 1], &v->diff[j], len);
       //	my_print_hs(h);
-	}						
+	}
+	return correct;						
 }
 
 // for ELEMS
@@ -133,14 +138,21 @@ void blake_hs_vec (struct hs *h) {
 	struct new_elems *info = malloc(sizeof(*info));
 	info->alloc = v->used * 10;
 	info->list = malloc (info->alloc * sizeof(*(info->list)));
+	info->is_orig = malloc (info->alloc * sizeof(*(info->is_orig)));
 	for (int i = 0; i < v->used; ++i){
 		info->list[i] = 1;
+		info->is_orig[i] = true;
 	}
 	info->used = v->used;
 	int deleted_idx = -1;
+	bool made_new = false;
 	// expanding
 	for (int i = 0; i < v->used; ++i) {
-		for (int j = 0; j < v->used; ++j) {
+		int j_init = 0;
+		if (info->is_orig[i]){
+			j_init = i + 1;
+		}
+		for (int j = j_init; j < v->used; ++j) {
 			// check every part in elems, searching for two different bits 1 and 0
 			if (i == j) continue;
 			for (int part = 0; part < SIZE(len); ++part) { // inside array_t*
@@ -149,21 +161,25 @@ void blake_hs_vec (struct hs *h) {
 				array_t tmp_i = 0;
 				array_t tmp_j = 0;
 				for (; mask1 > 0; mask1 <<= 2) { // inside array_t
-                    printf("i=%d j=%d part=%d h size=%d deleted idx=%d\n", i, j, part, hs_count(h), deleted_idx);
+                    printf("i=%d j=%d part=%d h size=%d\n", i, j, part, hs_count(h));
                     printf("%lx\n", mask1);
 					tmp_i = ~(v->elems[i][part] & mask1 | mask2);
 					tmp_j = ~(v->elems[j][part] & mask1 | mask2);
 				    
 					// if found - make new elem
 					if (tmp_i != 0 && tmp_j != 0 && tmp_i != tmp_j){
-						make_new_elem(h, i, j, part, mask1);
-						my_compact(&v->diff[v->used - 1], NULL, len);
-						add_info(info);		
-						//my_print_hs(h);
-						deleted_idx = merge(h, i, j, info);
-						//my_print_hs(h);
-                        break;
+						made_new = make_new_elem(h, i, j, part, mask1);
+						if (made_new){
+							my_compact(&v->diff[v->used - 1], NULL, len);
+							add_info(info);		
+							//my_print_hs(h);
+							deleted_idx = merge(h, i, j, info);
+							//my_print_hs(h);
+							made_new = false;
+                        	break;
+                        }
       				}
+      				printf("deleted idx=%d\n", deleted_idx);
 					mask2 <<= 2;
 					mask2 += 3;
 				}
