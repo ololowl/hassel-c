@@ -6,7 +6,7 @@
 #endif
 
 
-enum {MAX_POS_MASKS = 100};
+enum {MAX_POS_MASKS = 10, MAX_NEG = 3};
 
 int str_size(int len) {
 	return len + len / 8;
@@ -24,7 +24,7 @@ int mypower(int a, int p) {
 int generate_mask_str(int len, char *s) {
 	int ans = 0;
 	for (int i = 0; i < len; ++i){
-		if (i % 8 == 0 && i != str_size(len) - 1 && i != 0){
+		if (i % 8 == 0 && i < str_size(len) - 1 && i != 0){
 			s[i + i / 8 - 1] = ',';
 		}
 		int r = rand() % 3;
@@ -71,10 +71,9 @@ void generate_hs(struct hs *h, int n_positive, int len) {
 		a = array_from_str(s);
 	//	printf("a %d %s\n", i, array_to_str(a, SIZE(len), true));
 		hs_add(h, a);
-		int max_neg = 50;//mypower(3, xs);
-		int n_neg = rand() % max_neg;
+		int n_neg = rand() % MAX_NEG;
 
-		generate_diff_array(n_neg, h, i, s, len);
+		//generate_diff_array(n_neg, h, i, s, len);
 		//printf("\n");
 	}	
 }
@@ -82,13 +81,13 @@ void generate_hs(struct hs *h, int n_positive, int len) {
 
 int main() {
 	srand(time(NULL));
-	int len = 256;
+	int len = 8;
 	int n_positive = rand() % MAX_POS_MASKS;
 	//printf("%d\n", n_positive);
 	struct hs *h = hs_create(len / 8);
 	generate_hs(h, n_positive, len);
 	int x0 = hs_count(h) + hs_count_diff(h);
-	//hs_compact(h);
+	hs_compact(h);
 	//my_print_hs(h);
 	//printf("\n");
 	

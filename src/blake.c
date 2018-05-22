@@ -4,12 +4,19 @@
 #define ODD_MASK  ( (array_t) 0x5555555555555555ull )
 #endif
 
+#ifndef SIZE
+#define SIZE(L) ( DIV_ROUND_UP (2 * (L), sizeof (array_t)) )
+#endif
+
+
+
 void add_info(struct new_elems *info) {
 	if (info->used == info->alloc) {
 		info->alloc *= 2;
 		info->list = realloc(info->list, info->alloc);
 	}
-	info->list[info->used++] = 0;
+	info->list[info->used] = 0;
+	info->used++;
 }
 
 void info_free(struct new_elems *info) {
@@ -17,7 +24,7 @@ void info_free(struct new_elems *info) {
 	free(info);
 }
 
-void info_elem_merge(struct new_elems *info, int i) {
+void info_elem_free(struct new_elems *info, int i) {
 	info->list[i] = info->list[info->used - 1];
 	info->used--;
 	info->list[i]++;
@@ -36,13 +43,13 @@ int merge(struct hs *h, int i, int j, struct new_elems *info) {
 	if (array_is_sub(extra, b, h->len)) {
 		//printf("b\n");
 		my_free(&h->list, j);
-		info_elem_merge(info, j);
+		info_elem_free(info, j);
         idx = j;
 	}
     if (array_is_sub(extra, a, h->len)) {
         //printf("a\n");
         my_free(&h->list, i);
-        info_elem_merge(info, i);
+        info_elem_free(info, i);
         idx = i;
     }
     return idx;
@@ -75,13 +82,13 @@ int merge_check_diffs(struct hs *h, int i, int j, struct new_elems *info){
 	if (array_is_sub(a, b, h->len)){ // a eats b
 		if (check_diffs(h, i, j)){	 // i eats j
 			my_free(&h->list, j);
-			info_elem_merge(info, j);
+			info_elem_free(info, j);
 			idx = j;
 		}
-	} else {					 // b eats a
+	} else {					 	 // b eats a
 		if (check_diffs(h, j, i)) {  // j eats i
 			my_free(&h->list, i);
-			info_elem_merge(info, i);
+			info_elem_free(info, i);
 			idx = i;
 		}
 	}
@@ -93,7 +100,7 @@ void make_new_elem (struct hs *h, int i, int j, int part, array_t mask1){
 	int len = h->len;
 	array_t *tmp = array_create(len, BIT_X);
 	bool correct = true;
-	for (int p = 0; p < len; ++p) {
+	for (int p = 0; p < SIZE(len); ++p) {
 		tmp[p] = v->elems[i][p] & v->elems[j][p];
 		// correct z-bit from intersection of active bits
 		if (p == part) {
@@ -126,24 +133,24 @@ void blake_hs_vec (struct hs *h) {
 	struct new_elems *info = malloc(sizeof(*info));
 	info->alloc = v->used * 10;
 	info->list = malloc (info->alloc * sizeof(*(info->list)));
-	int i;
-	for (i = 0; i < v->used; ++i){
+	for (int i = 0; i < v->used; ++i){
 		info->list[i] = 1;
 	}
-	info->used = i;
-    int idx_del = -1;
-    bool f = false;
+	info->used = v->used;
+	int deleted_idx = -1;
 	// expanding
 	for (int i = 0; i < v->used; ++i) {
 		for (int j = 0; j < v->used; ++j) {
 			// check every part in elems, searching for two different bits 1 and 0
-			for (int part = 0; part < len; ++part) { // inside array_t*
+			if (i == j) continue;
+			for (int part = 0; part < SIZE(len); ++part) { // inside array_t*
 				array_t mask1 = 3u;
 				array_t mask2 = ~mask1;
 				array_t tmp_i = 0;
 				array_t tmp_j = 0;
-				for (int bits = 0; bits < sizeof(tmp_i) * 8; bits += 2) { // inside array_t
-                    //printf("i=%d j=%d part=%d bits=%d h size%d\n", i, j, part, bits, hs_count(h) + hs_count_diff(h));
+				for (; mask1 > 0; mask1 <<= 2) { // inside array_t
+                    printf("i=%d j=%d part=%d h size=%d deleted idx=%d\n", i, j, part, hs_count(h), deleted_idx);
+                    printf("%lx\n", mask1);
 					tmp_i = ~(v->elems[i][part] & mask1 | mask2);
 					tmp_j = ~(v->elems[j][part] & mask1 | mask2);
 				    
@@ -152,30 +159,27 @@ void blake_hs_vec (struct hs *h) {
 						make_new_elem(h, i, j, part, mask1);
 						my_compact(&v->diff[v->used - 1], NULL, len);
 						add_info(info);		
-	//					my_print_hs(h);
-						idx_del = merge(h, i, j, info);
-	//					my_print_hs(h);
+						//my_print_hs(h);
+						deleted_idx = merge(h, i, j, info);
+						//my_print_hs(h);
                         break;
       				}
-					mask1 <<= 2;
 					mask2 <<= 2;
 					mask2 += 3;
 				}
-               // if (idx_del == i){
-               //     --i;
-               //     idx_del = -1;
-               //     f = true;
-               //     break;
-               // } else if (idx_del == j) {
-               //     --j;
-               //     idx_del = -1;
-               //     break;
-               // }
+				if (deleted_idx != -1){
+					break;
+				}
 			}
-		//	if (f) {
-		//		f = false;
-		//		break;
-		//	}
+			if (deleted_idx == i) {
+				--i;
+				deleted_idx = -1;
+				break;
+			}
+			if (deleted_idx == j) {
+				--j;
+				deleted_idx = -1;
+			}
 		}
 	}
 	//my_print_hs(h);

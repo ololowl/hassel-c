@@ -11,7 +11,7 @@ struct new_elems {
 
 void add_info(struct new_elems *info);
 void info_free(struct new_elems *info);
-void info_elem_merge(struct new_elems *info, int i);
+void info_elem_free(struct new_elems *info, int i);
 
 void my_print_hs(struct hs *h);
 

@@ -59,9 +59,9 @@ array_create (int len, enum bit_val val)
   //printf("%lu %lu\n", res,  res + 2 * len);
   //printf("%d %d \n", alen * sizeof *res,  alen * sizeof *res - 2 * len);
   if (val != BIT_UNDEF) memset (res, val * 0x55, 2 * len);
-  if (alen * sizeof *res - 2 * len < 0){
-    return res;
-  }
+  //if (alen * sizeof *res - 2 * len < 0){
+  //  return res;
+  //}
   memset ((uint8_t *) res + 2 * len, 0xff, alen * sizeof *res - 2 * len);
   return res;
 }

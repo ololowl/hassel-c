@@ -65,11 +65,12 @@ static void
 vec_elem_free (struct hs_vec *v, int i)
 {
   free (v->elems[i]);
-  v->elems[i] = v->elems[--v->used];
+  v->elems[i] = v->elems[v->used];
   if (v->diff) {
     vec_destroy (&v->diff[i]);
     v->diff[i] = v->diff[v->used];
   }
+  v->used--;
 }
 
 struct hs_vec
