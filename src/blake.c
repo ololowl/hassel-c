@@ -8,8 +8,6 @@
 #define SIZE(L) ( DIV_ROUND_UP (2 * (L), sizeof (array_t)) )
 #endif
 
-
-
 void add_info(struct new_elems *info) {
 	if (info->used == info->alloc) {
 		info->alloc *= 2;
@@ -32,7 +30,6 @@ void info_elem_free(struct new_elems *info, int i) {
 	info->is_orig[i] = info->is_orig[info->used - 1];
 	info->used--;
 	info->list[i]++;
-	info->is_orig[i] = true;
 }
 
 void my_print_hs(struct hs *h) {
