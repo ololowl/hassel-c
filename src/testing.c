@@ -86,7 +86,7 @@ int main() {
 	struct hs *h = hs_create(len / 8);
 	generate_hs(h, n_positive, len);
 	int x0 = hs_count(h) + hs_count_diff(h);
-	//hs_compact(h);
+	hs_compact(h);
 	//my_print_hs(h);
 	//printf("\n");
 	
